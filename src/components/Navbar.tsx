@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Copy, Check, Flame, Radio, Settings, LogOut, Maximize, Minimize } from 'lucide-react';
+import { Volume2, VolumeX, Copy, Check, LogOut, Maximize, Minimize } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
-import { isFirebaseConfigured } from '../firebase';
 
 interface NavbarProps {
   roomCode?: string;
-  onOpenFirebaseModal: () => void;
+  onOpenFirebaseModal?: () => void;
   onLeaveRoom?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   roomCode,
-  onOpenFirebaseModal,
   onLeaveRoom
 }) => {
   const [muted, setMuted] = useState(!sounds.enabled);
@@ -19,7 +17,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(
     typeof document !== 'undefined' ? Boolean(document.fullscreenElement) : false
   );
-  const isFb = isFirebaseConfigured();
 
   // Listen to fullscreen changes (including F11 or Esc keys)
   useEffect(() => {
@@ -79,12 +76,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-amber-500 to-yellow-400 p-0.5 shadow-lg shadow-amber-500/20">
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className="font-display font-black text-amber-400 text-lg sm:text-xl tracking-tighter">B!</span>
+              <span className="font-display font-black text-amber-400 text-lg sm:text-xl tracking-tighter">M!</span>
             </div>
           </div>
           <div>
             <h1 className="font-display font-black text-lg sm:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500 drop-shadow">
-              BULLSHIT!
+              ¡MENTIROSO!
             </h1>
             <p className="text-[10px] text-amber-400/80 font-bold uppercase tracking-widest hidden sm:block">
               El Juego de la Mentira
@@ -111,27 +108,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Action buttons */}
         <div className="flex items-center gap-2">
-          {/* Firebase Status Badge & Settings */}
-          <button
-            onClick={onOpenFirebaseModal}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-              isFb
-                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60'
-                : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/50'
-            }`}
-            title="Estado y Configuración de Firebase"
-          >
-            {isFb ? (
-              <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            ) : (
-              <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            )}
-            <span className="hidden md:inline">
-              {isFb ? 'Firestore Live' : 'Modo Local'}
-            </span>
-            <Settings className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
-          </button>
-
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}

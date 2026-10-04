@@ -588,7 +588,7 @@ export class GameService {
       // Truth told: contestant advances automatically
       contestantWon = true;
       newLadderStep = Math.min(room.ladderStep + 1, LADDER_PRIZES.length - 1);
-      reason = `¡El concursante dijo la VERDAD! La opción ${selected} era la respuesta correcta. Los panelistas que gritaron Bullshit quedaron en ridículo.`;
+      reason = `¡El concursante dijo la VERDAD! La opción ${selected} era la respuesta correcta. Los panelistas que votaron ¡MENTIROSO! quedaron en ridículo.`;
 
       // Reward believers with points
       for (const c of challengers) {
@@ -597,21 +597,21 @@ export class GameService {
         }
       }
     } else {
-      // Contestant lied (BULLSHIT)!
+      // Contestant lied (Mentira)!
       if (believers.length > 0) {
         // TRICKED AT LEAST ONE: Contestant triumphs!
         contestantWon = true;
         newLadderStep = Math.min(room.ladderStep + 1, LADDER_PRIZES.length - 1);
-        reason = `¡ENGAÑO EXITOSO! La opción ${selected} era FALSA (Bullshit), pero ${believers.join(', ')} le creyó. El concursante se sale con la suya y sube en la escalera.`;
+        reason = `¡ENGAÑO EXITOSO! La opción ${selected} era una MENTIRA, pero ${believers.join(', ')} le creyó. El concursante se sale con la suya y sube en la escalera.`;
 
         // Reward the contestant with bonus points
         if (contestant) {
           await this.updatePlayer(code, contestant.id, { score: (contestant.score || 0) + 1000 });
         }
       } else {
-        // UNANIMOUS BULLSHIT: ALL challengers called it! Contestant is busted!
+        // UNANIMOUS: ALL challengers called it! Contestant is busted!
         contestantWon = false;
-        reason = `¡DESCUBIERTO POR UNANIMIDAD! Todo el panel gritó ¡BULLSHIT! La opción ${selected} era una mentira total. ${contestant?.name || 'El concursante'} queda eliminado y se lleva a casa: ${securedAmount} (Monto Asegurado por Candado).`;
+        reason = `¡DESCUBIERTO POR UNANIMIDAD! Todo el panel gritó ¡MENTIROSO! La opción ${selected} era una mentira total. ${contestant?.name || 'El concursante'} queda eliminado y se lleva a casa: ${securedAmount} (Monto Asegurado por Candado).`;
 
         // Find fastest challenger who voted bullshit to take the Hot Seat!
         const bullshitters = challengers.filter((c) => c.vote === 'bullshit');

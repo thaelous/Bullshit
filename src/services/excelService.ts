@@ -66,7 +66,7 @@ export function downloadExcelTemplate(): void {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Preguntas Trivia');
 
-  XLSX.writeFile(workbook, 'plantilla_bullshit_trivia.xlsx');
+  XLSX.writeFile(workbook, 'plantilla_mentiroso_trivia.xlsx');
 }
 
 export async function parseExcelFile(file: File): Promise<ParseExcelResult> {

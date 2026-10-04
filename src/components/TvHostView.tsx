@@ -120,7 +120,7 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
                 PANTALLA PRINCIPAL / MODO TV STUDIO
               </span>
               <h3 className="font-display font-black text-xl text-white">
-                BULLSHIT: EL JUEGO DE LA MENTIRA
+                ¡MENTIROSO!: EL JUEGO DE LA MENTIRA
               </h3>
             </div>
           </div>

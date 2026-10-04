@@ -196,7 +196,7 @@ export const RevealView: React.FC<RevealViewProps> = ({
                 <XCircle className="w-10 h-10 text-red-400 flex-shrink-0 animate-bounce" />
                 <div>
                   <h3 className="font-display font-black text-2xl sm:text-3xl uppercase tracking-wider text-red-400">
-                    ¡ERA UN TOTAL BULLSHIT (MENTIRA)!
+                    ¡ERA UNA MENTIRA TOTAL!
                   </h3>
                   <p className="text-xs sm:text-sm text-red-200 mt-1">
                     La opción verdadera era en realidad la <strong className="underline text-white font-bold">{result.correctOption}: {question.options[result.correctOption]}</strong>
@@ -276,7 +276,7 @@ export const RevealView: React.FC<RevealViewProps> = ({
                           : 'bg-slate-800 text-slate-400'
                       }`}
                     >
-                      {isBullshitVote ? '¡Bullshit!' : isBelieveVote ? 'Le Creyó' : 'Sin Voto'}
+                      {isBullshitVote ? '¡Mentiroso!' : isBelieveVote ? 'Le Creyó' : 'Sin Voto'}
                     </span>
                   </motion.div>
                 );

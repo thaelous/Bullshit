@@ -381,7 +381,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 <p className="text-[11px] text-slate-300">
                   {contestant?.id === currentPlayer.id
                     ? 'Responderás en el estrado. Al iniciar la pregunta, verás en secreto si acertaste o si tendrás que jugar al engaño.'
-                    : 'Escucharás la defensa del mentiroso en vivo y votarás desde este celular si le crees o si gritas ¡BULLSHIT!'}
+                    : 'Escucharás la defensa del mentiroso en vivo y votarás desde este celular si le crees o si gritas ¡MENTIROSO!'}
                 </p>
               </div>
             </div>

@@ -200,7 +200,7 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
                   {currentStep === 0
                     ? 'Supera al menos 1 pregunta para poder activar un candado ($0 acumulado).'
                     : isCurrentStepLocked
-                    ? `Piso seguro de ${currentPrize} bloqueado. Si todo el panel te canta Bullshit, te llevas este monto garantizado.`
+                    ? `Piso seguro de ${currentPrize} bloqueado. Si todo el panel vota ¡MENTIROSO!, te llevas este monto garantizado.`
                     : `Asegura tu dinero acumulado actual de ${currentPrize}. Te ${
                         locksRemaining === 1 ? 'queda 1 candado' : `quedan ${locksRemaining} candados`
                       }.`}
@@ -253,7 +253,7 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
           <p>
             {hasSelected
               ? 'Al pulsar tu opción, se ha revelado cuál era la verdadera y cuáles son falsas. Revisa tu estrategia abajo antes de confirmar y defender tu postura ante el panel.'
-              : 'Intenta responder sin ayuda. Al hacer clic en cualquier opción, descubrirás al instante si acertaste o si deberás mentir con audacia (hacer Bullshit).'}
+              : 'Intenta responder sin ayuda. Al hacer clic en cualquier opción, descubrirás al instante si acertaste o si deberás mentir con audacia (jugar al Mentiroso).'}
           </p>
         </div>
       </div>
@@ -305,7 +305,7 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 animate-in fade-in duration-300">
-                      <AlertCircle className="w-3 h-3" /> MENTIRA / BULLSHIT
+                      <AlertCircle className="w-3 h-3" /> RESPUESTA FALSA (MENTIRA)
                     </span>
                   )
                 )}
@@ -350,12 +350,12 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
                   <p className="font-extrabold text-white text-sm">
                     {isSelectedCorrect
                       ? 'Estrategia: ¡Tienes la verdad!'
-                      : 'Estrategia: ¡Jugar al Bullshit (Mentira)!'}
+                      : 'Estrategia: ¡Jugar al Mentiroso!'}
                   </p>
                   <p className="leading-relaxed text-xs sm:text-sm">
                     {isSelectedCorrect
                       ? 'Tu misión es defenderla con seguridad para que los panelistas sospechen y caigan en el error, o te crean.'
-                      : 'Has seleccionado una respuesta incorrecta. Tu misión es convencer a AL MENOS UN panelista de que es verdad. ¡Si uno te cree, avanzas! Si todos votan Bullshit, quedas eliminado.'}
+                      : 'Has seleccionado una respuesta incorrecta. Tu misión es convencer a AL MENOS UN panelista de que es verdad. Si todos votan ¡MENTIROSO!, quedas eliminado.'}
                   </p>
                 </div>
               </motion.div>
@@ -433,7 +433,7 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
               EL JURADO ESTÁ VOTANDO...
             </h3>
             <p className="text-sm text-slate-300">
-              Los retadores están decidiendo en sus teléfonos si te creen o si gritan <span className="text-red-400 font-black">¡BULLSHIT!</span>
+              Los retadores están decidiendo en sus teléfonos si te creen o si gritan <span className="text-red-400 font-black">¡MENTIROSO!</span>
             </p>
 
             <div className="flex items-center justify-center gap-3 py-3">

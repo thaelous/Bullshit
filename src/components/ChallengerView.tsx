@@ -243,14 +243,14 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
               >
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
                 <span className="text-xs font-bold text-slate-200">
-                  ¡Voto registrado como: <span className={localVote === 'bullshit' ? 'text-red-400 uppercase font-black' : 'text-emerald-400 uppercase font-black'}>{localVote === 'bullshit' ? '¡BULLSHIT!' : 'LE CREO'}</span>! (Puedes cambiarlo si lo deseas)
+                  ¡Voto registrado como: <span className={localVote === 'bullshit' ? 'text-red-400 uppercase font-black' : 'text-emerald-400 uppercase font-black'}>{localVote === 'bullshit' ? '¡MENTIROSO!' : 'LE CREO'}</span>! (Puedes cambiarlo si lo deseas)
                 </span>
               </motion.div>
             )}
 
             {/* TWO GIANT TACTILE BUTTONS */}
             <div className="grid grid-cols-1 gap-3.5">
-              {/* RED BUTTON: BULLSHIT! (Miente) */}
+              {/* RED BUTTON: ¡MENTIROSO! (Miente) */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
@@ -262,7 +262,7 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
                 }`}
               >
                 <ShieldAlert className="w-8 h-8 flex-shrink-0" />
-                <span>¡BULLSHIT! (Miente)</span>
+                <span>¡MENTIROSO!</span>
                 {localVote === 'bullshit' && (
                   <span className="absolute top-2 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/40 text-white">
                     SELECCIONADO
@@ -282,7 +282,7 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
                 }`}
               >
                 <CheckCircle2 className="w-8 h-8 flex-shrink-0" />
-                <span>LE CREO</span>
+                <span>LE CREO (ES VERDAD)</span>
                 {localVote === 'believe' && (
                   <span className="absolute top-2 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/40 text-white">
                     SELECCIONADO
@@ -292,7 +292,7 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
             </div>
 
             <p className="text-[11px] text-center text-slate-400">
-              Regla: Si todos votan unánimemente ¡BULLSHIT! y el concursante mentía, ¡el concursante queda eliminado y tú podrías ser el nuevo concursante!
+              Regla: Si todos votan unánimemente ¡MENTIROSO! y el concursante mentía, ¡el concursante queda eliminado y tú podrías ser el nuevo concursante!
             </p>
           </motion.div>
         )}

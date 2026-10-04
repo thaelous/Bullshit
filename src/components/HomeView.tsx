@@ -214,7 +214,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <h1 className="font-display font-black text-5xl sm:text-7xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 drop-shadow-2xl">
-          ¡BULLSHIT!
+          ¡MENTIROSO!
         </h1>
 
         <p className="font-display font-extrabold text-lg sm:text-2xl text-slate-200 tracking-wide uppercase">
@@ -507,7 +507,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
           <h4 className="font-bold text-sm text-white">Pregunta Difícil</h4>
           <p className="text-xs text-slate-400 leading-relaxed">
-            El concursante en turno ve la respuesta real en secreto y elige si dirá la verdad o inventará un engaño ("Bullshit").
+            El concursante en turno ve la respuesta real en secreto y elige si dirá la verdad o inventará una mentira.
           </p>
         </div>
 
@@ -525,7 +525,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black">
             3
           </div>
-          <h4 className="font-bold text-sm text-white">¡Bullshit o Verdad!</h4>
+          <h4 className="font-bold text-sm text-white">¡Mentira o Verdad!</h4>
           <p className="text-xs text-slate-400 leading-relaxed">
             Los panelistas votan en sus celulares. Si mintió pero al menos 1 le cree, ¡el concursante gana y sube de premio!
           </p>
