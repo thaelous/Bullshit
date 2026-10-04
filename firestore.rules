@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Game Rooms
+    match /rooms/{roomId} {
+      allow read: if isValidId(roomId);
+      allow create: if isValidId(roomId) &&
+        request.resource.data.keys().hasAll(['status', 'currentQuestionIndex', 'ladderStep']) &&
+        request.resource.data.status in ['lobby', 'question_selection', 'question_active', 'defense_phase', 'voting', 'reveal', 'game_over'];
+      allow update: if isValidId(roomId) &&
+        request.resource.data.status in ['lobby', 'question_selection', 'question_active', 'defense_phase', 'voting', 'reveal', 'game_over'];
+      allow delete: if isValidId(roomId);
+
+      // Players Subcollection
+      match /players/{playerId} {
+        allow read: if isValidId(roomId) && isValidId(playerId);
+        allow create, update: if isValidId(roomId) && isValidId(playerId) &&
+          request.resource.data.keys().hasAll(['name', 'role']) &&
+          request.resource.data.name is string && request.resource.data.name.size() <= 50 &&
+          request.resource.data.role in ['contestant', 'challenger'];
+        allow delete: if isValidId(roomId) && isValidId(playerId);
+      }
+    }
+
+    // Question Sets collection (Excel templates)
+    match /questionSets/{questionSetId} {
+      allow read: if isValidId(questionSetId);
+      allow create, update: if isValidId(questionSetId) &&
+        request.resource.data.keys().hasAll(['name', 'questionCount']) &&
+        request.resource.data.name is string && request.resource.data.name.size() <= 100;
+      allow delete: if isValidId(questionSetId);
+    }
+  }
+}

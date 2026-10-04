@@ -1,0 +1,8 @@
+{
+  "name": "Remix Bullshit: El Juego de la Mentira",
+  "description": "Juego de concurso multijugador en tiempo real de trivia y engaño. ¿Dices la verdad o te descubrirán con un grito de ¡Bullshit!?",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

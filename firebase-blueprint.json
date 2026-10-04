@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "Game room state for Bullshit trivia show",
+      "type": "object",
+      "properties": {
+        "roomCode": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Join code for players"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["lobby", "question_selection", "question_active", "defense_phase", "voting", "reveal", "game_over"],
+          "description": "Current phase of the game"
+        },
+        "currentQuestionIndex": {
+          "type": "number",
+          "description": "Index of current trivia question"
+        },
+        "activeContestantId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Player ID currently in the hot seat"
+        },
+        "selectedOption": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Option chosen by the contestant (A, B, C, D)"
+        },
+        "ladderStep": {
+          "type": "number",
+          "description": "Current step in the cash ladder ($1k to $1M)"
+        },
+        "timerSeconds": {
+          "type": "number",
+          "description": "Remaining countdown seconds"
+        },
+        "timerActive": {
+          "type": "boolean",
+          "description": "Whether the phase timer is ticking"
+        },
+        "hostId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Player or display device managing the room"
+        }
+      },
+      "required": ["status", "currentQuestionIndex", "ladderStep"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "Participant in the game room",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Player display name"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["contestant", "challenger"],
+          "description": "Player active role"
+        },
+        "vote": {
+          "type": "string",
+          "enum": ["believe", "bullshit", "none"],
+          "description": "Challenger's verdict during voting phase"
+        },
+        "voteTimestamp": {
+          "type": "number",
+          "description": "Timestamp when vote was cast for speed tiebreakers"
+        },
+        "isReady": {
+          "type": "boolean",
+          "description": "Lobby ready status"
+        },
+        "score": {
+          "type": "number",
+          "description": "Player points or cash earned"
+        },
+        "avatar": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Emoji avatar"
+        }
+      },
+      "required": ["name", "role"]
+    },
+    "QuestionSet": {
+      "title": "QuestionSet",
+      "description": "A collection of custom trivia questions uploaded via Excel",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the question set"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Creation timestamp"
+        },
+        "questionCount": {
+          "type": "number",
+          "description": "Total number of questions in set"
+        }
+      },
+      "required": ["name", "questionCount"]
+    }
+  },
+  "firestore": {
+    "/rooms/{roomId}": {
+      "schema": "Room",
+      "description": "Main room document"
+    },
+    "/rooms/{roomId}/players/{playerId}": {
+      "schema": "Player",
+      "description": "Subcollection of players in the room"
+    },
+    "/questionSets/{questionSetId}": {
+      "schema": "QuestionSet",
+      "description": "Custom question sets uploaded by hosts"
+    }
+  }
+}
