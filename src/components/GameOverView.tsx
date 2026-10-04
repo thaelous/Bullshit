@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Room, Player, LADDER_PRIZES } from '../types';
+import { Room, Player, LADDER_PRIZES, getAvatarColorClasses } from '../types';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
 import { Trophy, RotateCcw, Crown, Sparkles, Home } from 'lucide-react';
@@ -19,7 +19,10 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
   onLeave
 }) => {
   const winner = players.find((p) => p.id === room.activeContestantId);
-  const prize = LADDER_PRIZES[room.ladderStep]?.amount || '$1,000,000';
+  const isGrandWinner = room.ladderStep >= LADDER_PRIZES.length - 1;
+  const prize = isGrandWinner
+    ? (LADDER_PRIZES[room.ladderStep]?.amount || '$1,000,000')
+    : (room.lockedAmount || '$0');
 
   useEffect(() => {
     sounds.playTransition('game_over');
@@ -41,25 +44,44 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center p-6 space-y-6 text-center animate-in zoom-in-95 duration-500">
       <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center text-5xl shadow-2xl glow-gold animate-bounce">
-        🏆
+        {isGrandWinner ? '🏆' : '🔒'}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <span className="text-xs uppercase font-extrabold tracking-widest text-amber-400">
           ¡FIN DEL JUEGO!
         </span>
         <h2 className="font-display font-black text-4xl sm:text-6xl text-white tracking-tight">
-          ¡CONQUISTÓ LA ESCALERA!
+          {isGrandWinner ? '¡CONQUISTÓ LA ESCALERA!' : '¡PARTIDA FINALIZADA!'}
         </h2>
+
+        {winner && (
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
+            <span className={`w-10 h-10 rounded-xl border flex items-center justify-center text-2xl shadow-sm ${getAvatarColorClasses(winner.avatarColor).bgClass} ${getAvatarColorClasses(winner.avatarColor).borderClass}`}>
+              {winner.avatar}
+            </span>
+            <span className="font-display font-black text-lg text-white">
+              {winner.name}
+            </span>
+          </div>
+        )}
+
         <p className="text-slate-300 text-sm max-w-md mx-auto">
-          {winner?.name || 'El Concursante'} alcanzó la cima del juego de la mentira con un premio total de:
+          {isGrandWinner
+            ? `${winner?.name || 'El Concursante'} alcanzó la cima del juego de la mentira con un premio total de:`
+            : `${winner?.name || 'El Concursante'} se lleva a casa el premio asegurado por su decisión de candado:`}
         </p>
       </div>
 
-      <div className="px-8 py-4 rounded-3xl bg-slate-900 border-2 border-amber-400 glow-gold shadow-2xl">
+      <div className="px-8 py-4 rounded-3xl bg-slate-900 border-2 border-amber-400 glow-gold shadow-2xl space-y-1">
         <span className="font-display font-black text-4xl sm:text-6xl text-amber-400">
           {prize}
         </span>
+        {!isGrandWinner && (
+          <span className="text-xs font-bold text-amber-300/80 block">
+            Monto Asegurado por Candado
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md pt-4">

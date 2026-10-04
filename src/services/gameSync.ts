@@ -126,6 +126,10 @@ export class GameService {
       hostId,
       createdAt: Date.now(),
       roundResult: null,
+      locksRemaining: 2,
+      lockedStep: 0,
+      lockedAmount: '$0',
+      lockedSteps: [],
     };
 
     if (db && isFirebaseConfigured()) {
@@ -148,7 +152,14 @@ export class GameService {
   // ASSIGN THE LIAR (CONCURSANTE EN EL ESTRADO) AND SET REST AS CHALLENGERS
   async assignContestant(roomCode: string, contestantId: string, players: Player[]) {
     const code = roomCode.toUpperCase().trim();
-    await this.updateRoom(code, { activeContestantId: contestantId });
+    await this.updateRoom(code, {
+      activeContestantId: contestantId,
+      ladderStep: 0,
+      locksRemaining: 2,
+      lockedStep: 0,
+      lockedAmount: '$0',
+      lockedSteps: [],
+    });
 
     for (const p of players) {
       const newRole: 'contestant' | 'challenger' = p.id === contestantId ? 'contestant' : 'challenger';
@@ -159,7 +170,13 @@ export class GameService {
   }
 
   // CREATE ROOM (WITH HOST AS PARTICIPANT)
-  async createRoom(hostId: string, hostName: string, avatar: string, isContestant: boolean = true): Promise<{ room: Room; player: Player }> {
+  async createRoom(
+    hostId: string,
+    hostName: string,
+    avatar: string,
+    isContestant: boolean = true,
+    avatarColor: string = 'amber'
+  ): Promise<{ room: Room; player: Player }> {
     const roomCode = generateRoomCode();
     const db = getFirestoreDB();
 
@@ -175,12 +192,17 @@ export class GameService {
       hostId,
       createdAt: Date.now(),
       roundResult: null,
+      locksRemaining: 2,
+      lockedStep: 0,
+      lockedAmount: '$0',
+      lockedSteps: [],
     };
 
     const initialPlayer: Player = {
       id: hostId,
       name: hostName,
       avatar,
+      avatarColor,
       role: isContestant ? 'contestant' : 'challenger',
       vote: null,
       voteTimestamp: null,
@@ -209,7 +231,14 @@ export class GameService {
   }
 
   // JOIN ROOM
-  async joinRoom(roomCode: string, playerId: string, playerName: string, avatar: string, roleOverride?: 'contestant' | 'challenger'): Promise<Player> {
+  async joinRoom(
+    roomCode: string,
+    playerId: string,
+    playerName: string,
+    avatar: string,
+    roleOverride?: 'contestant' | 'challenger',
+    avatarColor: string = 'cyan'
+  ): Promise<Player> {
     const code = roomCode.toUpperCase().trim();
     const db = getFirestoreDB();
 
@@ -226,6 +255,7 @@ export class GameService {
       id: playerId,
       name: playerName.trim(),
       avatar,
+      avatarColor,
       role,
       vote: null,
       voteTimestamp: null,
@@ -404,6 +434,7 @@ export class GameService {
   async addBotPlayer(roomCode: string, name?: string) {
     const botNames = ['Mateo (El Escéptico)', 'Sofía (Detectora de Mentiras)', 'Lucas (Confiado)', 'Valentina (Audaz)', 'Alejandro (Investigador)'];
     const botAvatars = ['🧐', '🕵️‍♀️', '😎', '🦁', '🦉'];
+    const botColors = ['cyan', 'purple', 'emerald', 'rose', 'orange'];
     const randomIdx = Math.floor(Math.random() * botNames.length);
 
     const botId = `bot_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -411,6 +442,7 @@ export class GameService {
       id: botId,
       name: name || botNames[randomIdx],
       avatar: botAvatars[randomIdx],
+      avatarColor: botColors[randomIdx % botColors.length],
       role: 'challenger',
       vote: null,
       voteTimestamp: null,
@@ -446,13 +478,46 @@ export class GameService {
       await this.updatePlayer(code, p.id, { vote: null, voteTimestamp: null });
     }
 
-    await this.updateRoom(code, {
+    const updates: Partial<Room> = {
       status: 'question_selection',
       currentQuestionIndex: questionIndex,
       selectedOption: null,
       roundResult: null,
       timerSeconds: 45,
       timerActive: true,
+    };
+
+    if (questionIndex === 0) {
+      updates.ladderStep = 0;
+      updates.locksRemaining = 2;
+      updates.lockedStep = 0;
+      updates.lockedAmount = '$0';
+      updates.lockedSteps = [];
+    }
+
+    await this.updateRoom(code, updates);
+  }
+
+  // CONTESTANT STRATEGICALLY ACTIVATES A LOCK ON CURRENT ACCUMULATED LEVEL
+  async activateLock(roomCode: string, currentLadderStep: number): Promise<void> {
+    const code = roomCode.toUpperCase().trim();
+    const room = await this.getRoom(code);
+    if (!room) return;
+
+    const locksRemaining = room.locksRemaining ?? 2;
+    if (locksRemaining <= 0) return;
+    if (currentLadderStep <= 0) return;
+
+    const targetAmount = LADDER_PRIZES[currentLadderStep]?.amount || '$0';
+    const newLocksRemaining = Math.max(0, locksRemaining - 1);
+    const currentLockedSteps = room.lockedSteps || [];
+    const newLockedSteps = Array.from(new Set([...currentLockedSteps, currentLadderStep]));
+
+    await this.updateRoom(code, {
+      locksRemaining: newLocksRemaining,
+      lockedStep: currentLadderStep,
+      lockedAmount: targetAmount,
+      lockedSteps: newLockedSteps,
     });
   }
 
@@ -517,6 +582,7 @@ export class GameService {
     let newLadderStep = room.ladderStep;
     let newContestantId = room.activeContestantId;
     let newContestantName = contestant?.name;
+    const securedAmount = room.lockedAmount || '$0';
 
     if (isTruth) {
       // Truth told: contestant advances automatically
@@ -545,7 +611,7 @@ export class GameService {
       } else {
         // UNANIMOUS BULLSHIT: ALL challengers called it! Contestant is busted!
         contestantWon = false;
-        reason = `¡DESCUBIERTO POR UNANIMIDAD! Todo el panel gritó ¡BULLSHIT! La opción ${selected} era una mentira total. El concursante queda eliminado.`;
+        reason = `¡DESCUBIERTO POR UNANIMIDAD! Todo el panel gritó ¡BULLSHIT! La opción ${selected} era una mentira total. ${contestant?.name || 'El concursante'} queda eliminado y se lleva a casa: ${securedAmount} (Monto Asegurado por Candado).`;
 
         // Find fastest challenger who voted bullshit to take the Hot Seat!
         const bullshitters = challengers.filter((c) => c.vote === 'bullshit');
@@ -560,8 +626,8 @@ export class GameService {
             await this.updatePlayer(code, contestant.id, { role: 'challenger' });
           }
           await this.updatePlayer(code, successor.id, { role: 'contestant', score: (successor.score || 0) + 1500 });
-          // Reset ladder step or safe haven
-          newLadderStep = room.ladderStep >= 6 ? 6 : room.ladderStep >= 3 ? 3 : 0;
+          // New contestant starts on ladder step 0
+          newLadderStep = 0;
         }
       }
     }
@@ -579,15 +645,27 @@ export class GameService {
       newLadderStep,
       newContestantId: newContestantId || undefined,
       newContestantName: newContestantName || undefined,
+      eliminated: !contestantWon,
+      takeHomeAmount: !contestantWon ? securedAmount : undefined,
     };
 
-    await this.updateRoom(code, {
+    const roomUpdates: Partial<Room> = {
       status: 'reveal',
       ladderStep: newLadderStep,
       activeContestantId: newContestantId,
       roundResult,
       timerActive: false,
-    });
+    };
+
+    if (!contestantWon) {
+      // Current run terminated. Reset locks for the new hot seat occupant
+      roomUpdates.locksRemaining = 2;
+      roomUpdates.lockedStep = 0;
+      roomUpdates.lockedAmount = '$0';
+      roomUpdates.lockedSteps = [];
+    }
+
+    await this.updateRoom(code, roomUpdates);
   }
 
   // ADVANCE TO NEXT QUESTION

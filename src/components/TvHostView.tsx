@@ -1,5 +1,5 @@
-import React from 'react';
-import { Room, Player, Question } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Room, Player, Question, getAvatarColorClasses } from '../types';
 import { Ladder } from './Ladder';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
@@ -11,7 +11,9 @@ import {
   Lock,
   Vote,
   Tv,
-  ArrowRight
+  ArrowRight,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 
 interface TvHostViewProps {
@@ -34,6 +36,42 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
   const isConfirmed = !isSelectionPhase && Boolean(room.selectedOption);
 
   const [timer, setTimer] = React.useState(room.timerSeconds);
+  const [isFullscreen, setIsFullscreen] = useState(
+    typeof document !== 'undefined' ? Boolean(document.fullscreenElement) : false
+  );
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullScreen = () => {
+    sounds.playClick();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error al activar pantalla completa: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.error(`Error al salir de pantalla completa: ${err.message}`);
+        });
+      }
+    }
+  };
 
   React.useEffect(() => {
     setTimer(room.timerSeconds);
@@ -100,13 +138,30 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
             >
               Vista de Jugador
             </button>
+
+            <button
+              onClick={toggleFullScreen}
+              className={`p-1.5 rounded-xl border transition-all ${
+                isFullscreen
+                  ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-sm'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white'
+              }`}
+              title={isFullscreen ? 'Salir de Pantalla Completa (Esc)' : 'Pantalla Completa (F11)'}
+              aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Activar pantalla completa'}
+            >
+              {isFullscreen ? (
+                <Minimize className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Maximize className="w-4 h-4" />
+              )}
+            </button>
           </div>
         </div>
 
         {/* Contestant Podium Banner */}
         <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-950 border-2 border-amber-500/50 shadow-2xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center text-4xl shadow-xl glow-gold">
+            <div className={`w-16 h-16 rounded-2xl border-2 flex items-center justify-center text-4xl shadow-xl glow-gold ${getAvatarColorClasses(contestant?.avatarColor).bgClass} ${getAvatarColorClasses(contestant?.avatarColor).borderClass}`}>
               {contestant?.avatar || '👑'}
             </div>
             <div>
@@ -199,6 +254,7 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
             {challengers.map((p) => {
               const hasVoted = p.vote !== null;
+              const pColor = getAvatarColorClasses(p.avatarColor);
               return (
                 <div
                   key={p.id}
@@ -209,7 +265,9 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{p.avatar}</span>
+                    <span className={`w-8 h-8 rounded-xl border flex items-center justify-center text-lg shadow-sm ${pColor.bgClass} ${pColor.borderClass}`}>
+                      {p.avatar}
+                    </span>
                     <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">
                       {p.name}
                     </span>
@@ -255,7 +313,12 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
 
       {/* Right Column: The Iconic TV Ladder */}
       <div className="w-full lg:w-auto flex justify-center">
-        <Ladder currentStep={room.ladderStep} />
+        <Ladder
+          currentStep={room.ladderStep}
+          lockedSteps={room.lockedSteps || []}
+          locksRemaining={room.locksRemaining ?? 2}
+          lockedAmount={room.lockedAmount || '$0'}
+        />
       </div>
     </div>
   );

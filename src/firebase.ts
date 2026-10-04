@@ -1,11 +1,9 @@
 /**
  * =========================================================================
- * CONFIGURACIÓN DE FIREBASE PARA BULLSHIT GAME SHOW
+ * CONFIGURACIÓN REAL DE FIREBASE FIRESTORE - BULLSHIT GAME SHOW
  * =========================================================================
- * Reemplaza los siguientes valores con las credenciales de tu proyecto
- * de Firebase Console (Configuración del Proyecto > General > Tus apps > SDK setup).
- * 
- * También puedes configurarlas dinámicamente desde el botón ⚙️ en la aplicación.
+ * Proyecto: bullshit-4a41d
+ * Sincronización en tiempo real (Modular SDK v9/v10)
  */
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
@@ -17,18 +15,23 @@ import {
   updateDoc,
   onSnapshot,
   collection,
+  addDoc,
   deleteDoc
 } from 'firebase/firestore';
 
-// BLOQUE DE CONFIGURACIÓN DE FIREBASE (PLACEHOLDERS REEMPLAZABLES)
 export const firebaseConfig = {
-  apiKey: "AIzaSy_TU_API_KEY_AQUI_FIREBASE",
-  authDomain: "bullshit-trivia-game.firebaseapp.com",
-  projectId: "bullshit-trivia-game",
-  storageBucket: "bullshit-trivia-game.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890abcdef"
+  apiKey: "AIzaSyBKOhxOjUf_3P--mAF20QY3NpOgC76e76A",
+  authDomain: "bullshit-4a41d.firebaseapp.com",
+  projectId: "bullshit-4a41d",
+  storageBucket: "bullshit-4a41d.firebasestorage.app",
+  messagingSenderId: "720950296313",
+  appId: "1:720950296313:web:9eb0bbd67a1eb08a152c28"
 };
+
+// Initialize Firebase App & Firestore
+const existingApps = getApps();
+export const app: FirebaseApp = existingApps.length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const db: Firestore = getFirestore(app);
 
 export enum OperationType {
   CREATE = 'create',
@@ -74,70 +77,36 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Key for custom user-entered firebase config in browser
-const STORED_CONFIG_KEY = 'bullshit_firebase_custom_config';
+// Clear any previous mock config from storage to ensure project bullshit-4a41d is used
+if (typeof window !== 'undefined') {
+  try {
+    const custom = localStorage.getItem('bullshit_firebase_custom_config');
+    if (custom && custom.includes('AIzaSy_TU_API_KEY')) {
+      localStorage.removeItem('bullshit_firebase_custom_config');
+    }
+  } catch {}
+}
 
 export function getEffectiveFirebaseConfig() {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(STORED_CONFIG_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.projectId && parsed.apiKey && !parsed.apiKey.includes('TU_API_KEY')) {
-          return parsed;
-        }
-      } catch {}
-    }
-  }
   return firebaseConfig;
 }
 
 export function saveCustomFirebaseConfig(config: typeof firebaseConfig | null) {
+  // Maintained for modal compatibility
   if (typeof window === 'undefined') return;
-  appInstance = null;
-  firestoreInstance = null;
   if (!config) {
-    localStorage.removeItem(STORED_CONFIG_KEY);
+    localStorage.removeItem('bullshit_firebase_custom_config');
   } else {
-    localStorage.setItem(STORED_CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem('bullshit_firebase_custom_config', JSON.stringify(config));
   }
 }
 
 export function isFirebaseConfigured(): boolean {
-  const cfg = getEffectiveFirebaseConfig();
-  return Boolean(
-    cfg.apiKey &&
-    !cfg.apiKey.includes('TU_API_KEY') &&
-    cfg.apiKey !== 'AIzaSy_TU_API_KEY_AQUI_FIREBASE' &&
-    cfg.projectId &&
-    !cfg.projectId.includes('tu-proyecto')
-  );
+  return true;
 }
 
-// Initialize real Firebase instance if configured
-let appInstance: FirebaseApp | null = null;
-let firestoreInstance: Firestore | null = null;
-
-export function getFirestoreDB(): Firestore | null {
-  if (typeof window === 'undefined') return null;
-  const cfg = getEffectiveFirebaseConfig();
-  const configured = isFirebaseConfigured();
-
-  if (!configured) return null;
-
-  try {
-    if (!appInstance) {
-      const existingApps = getApps();
-      appInstance = existingApps.length > 0 ? getApp() : initializeApp(cfg);
-    }
-    if (!firestoreInstance && appInstance) {
-      firestoreInstance = getFirestore(appInstance);
-    }
-    return firestoreInstance;
-  } catch (err) {
-    console.warn('Firebase initialization note:', err);
-    return null;
-  }
+export function getFirestoreDB(): Firestore {
+  return db;
 }
 
 export {
@@ -147,5 +116,6 @@ export {
   updateDoc,
   onSnapshot,
   collection,
+  addDoc,
   deleteDoc
 };

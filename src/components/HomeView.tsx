@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
+import { PREDEFINED_AVATAR_ICONS, PREDEFINED_AVATAR_COLORS, getAvatarColorClasses } from '../types';
 import {
   Flame,
   Users,
@@ -11,10 +12,10 @@ import {
   CheckCircle2,
   Tv,
   HelpCircle,
-  Trophy
+  Trophy,
+  Palette,
+  Smile
 } from 'lucide-react';
-
-const AVATARS = ['😎', '🦁', '🦊', '🦉', '👑', '🕵️‍♀️', '🤖', '🎭', '🎩', '⚡', '🍀', '🚀'];
 
 interface HomeViewProps {
   onGameJoined: (roomCode: string, playerId: string, isHost: boolean) => void;
@@ -30,7 +31,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   );
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState(initialRoomCode);
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(PREDEFINED_AVATAR_ICONS[0]);
+  const [selectedAvatarColor, setSelectedAvatarColor] = useState<string>('amber');
   const [isTvDisplay, setIsTvDisplay] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -39,6 +41,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     if (initialRoomCode) {
       setRoomCode(initialRoomCode.toUpperCase().trim());
       setMode('qr_join');
+      setSelectedAvatarColor('cyan');
     }
   }, [initialRoomCode]);
 
@@ -72,7 +75,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         hostId,
         playerName.trim(),
         selectedAvatar,
-        !isTvDisplay
+        !isTvDisplay,
+        selectedAvatarColor
       );
       onGameJoined(room.roomCode, hostId, true);
     } catch (err: unknown) {
@@ -98,13 +102,81 @@ export const HomeView: React.FC<HomeViewProps> = ({
     try {
       sounds.playClick();
       const playerId = `player_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      await gameService.joinRoom(targetCode, playerId, playerName.trim(), selectedAvatar, 'challenger');
+      await gameService.joinRoom(
+        targetCode,
+        playerId,
+        playerName.trim(),
+        selectedAvatar,
+        'challenger',
+        selectedAvatarColor
+      );
       onGameJoined(targetCode, playerId, false);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Error al unirse a la sala');
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderAvatarAndColorPicker = (accent: 'amber' | 'emerald' = 'amber') => {
+    const colorClasses = getAvatarColorClasses(selectedAvatarColor);
+    return (
+      <div className="space-y-2.5 p-3 rounded-2xl bg-slate-950/80 border border-slate-800">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <Smile className={`w-3.5 h-3.5 ${accent === 'emerald' ? 'text-emerald-400' : 'text-amber-400'}`} />
+            Elige tu Avatar y Color
+          </span>
+          <div className={`px-2.5 py-1 rounded-xl flex items-center gap-2 border text-xs font-bold ${colorClasses.bgClass} ${colorClasses.borderClass}`}>
+            <span className="text-base">{selectedAvatar}</span>
+            <span>{colorClasses.name.split(' ')[0]}</span>
+          </div>
+        </div>
+
+        {/* Icons grid */}
+        <div className="grid grid-cols-8 sm:grid-cols-12 gap-1.5 max-h-28 overflow-y-auto p-1 bg-slate-900/60 rounded-xl border border-slate-800/80">
+          {PREDEFINED_AVATAR_ICONS.map((icon) => (
+            <button
+              key={icon}
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setSelectedAvatar(icon);
+              }}
+              className={`h-8 rounded-lg flex items-center justify-center text-lg transition-all ${
+                selectedAvatar === icon
+                  ? `${colorClasses.bgClass} border-2 ${colorClasses.borderClass} scale-110 shadow-md`
+                  : 'bg-slate-950 border border-slate-800 hover:bg-slate-800'
+              }`}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+
+        {/* Colors palette */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+          {PREDEFINED_AVATAR_COLORS.map((col) => (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setSelectedAvatarColor(col.id);
+              }}
+              className={`p-1 rounded-lg border flex flex-col items-center gap-0.5 transition-all ${
+                selectedAvatarColor === col.id
+                  ? 'bg-slate-900 border-white ring-2 ring-white/50 scale-105'
+                  : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: col.hex }} />
+              <span className="text-[9px] text-slate-300 font-bold truncate max-w-full">{col.name.split(' ')[0]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   // Instant Quick Demo Play (Creates room + 3 bots)
@@ -265,28 +337,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
               />
             </div>
 
-            {/* Avatar picker */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Elige tu Avatar
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {AVATARS.map((av) => (
-                  <button
-                    key={av}
-                    type="button"
-                    onClick={() => setSelectedAvatar(av)}
-                    className={`h-11 rounded-xl flex items-center justify-center text-xl transition-all ${
-                      selectedAvatar === av
-                        ? 'bg-amber-500/20 border-2 border-amber-400 scale-105 shadow-md'
-                        : 'bg-slate-950 border border-slate-800 hover:bg-slate-800'
-                    }`}
-                  >
-                    {av}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Avatar & Color picker */}
+            {renderAvatarAndColorPicker('amber')}
 
             {/* TV Screen Mode toggle */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
@@ -365,28 +417,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
               />
             </div>
 
-            {/* Avatar picker */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Elige tu Avatar
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {AVATARS.map((av) => (
-                  <button
-                    key={av}
-                    type="button"
-                    onClick={() => setSelectedAvatar(av)}
-                    className={`h-11 rounded-xl flex items-center justify-center text-xl transition-all ${
-                      selectedAvatar === av
-                        ? 'bg-emerald-500/20 border-2 border-emerald-400 scale-105 shadow-md'
-                        : 'bg-slate-950 border border-slate-800 hover:bg-slate-800'
-                    }`}
-                  >
-                    {av}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Avatar & Color picker */}
+            {renderAvatarAndColorPicker('emerald')}
 
             <button
               type="submit"
@@ -452,28 +484,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
               />
             </div>
 
-            {/* Avatar picker */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Elige tu Avatar
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {AVATARS.map((av) => (
-                  <button
-                    key={av}
-                    type="button"
-                    onClick={() => setSelectedAvatar(av)}
-                    className={`h-11 rounded-xl flex items-center justify-center text-xl transition-all ${
-                      selectedAvatar === av
-                        ? 'bg-amber-500/20 border-2 border-amber-400 scale-105 shadow-md'
-                        : 'bg-slate-950 border border-slate-800 hover:bg-slate-800'
-                    }`}
-                  >
-                    {av}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Avatar & Color picker */}
+            {renderAvatarAndColorPicker('amber')}
 
             <button
               type="submit"

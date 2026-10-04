@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Room, Player, Question, LADDER_PRIZES } from '../types';
+import { Room, Player, Question, LADDER_PRIZES, getAvatarColorClasses } from '../types';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
 import {
@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Flame,
   Crown,
-  BookOpen
+  BookOpen,
+  Lock
 } from 'lucide-react';
 
 interface RevealViewProps {
@@ -34,6 +35,49 @@ export const RevealView: React.FC<RevealViewProps> = ({
   const [animationStep, setAnimationStep] = useState<number>(0);
   const [showRotatePicker, setShowRotatePicker] = useState<boolean>(false);
   const result = room.roundResult;
+
+  const triggerCelebrationConfetti = (isLieTrick: boolean, isUnanimous: boolean) => {
+    try {
+      const end = Date.now() + (isUnanimous ? 2600 : 1400);
+      const colors = isUnanimous
+        ? ['#f59e0b', '#ffd700', '#ef4444', '#ec4899', '#06b6d4', '#10b981', '#ffffff']
+        : ['#f59e0b', '#fbbf24', '#ef4444', '#10b981', '#ffffff'];
+
+      // Central fireworks explosion
+      confetti({
+        particleCount: isUnanimous ? 160 : 110,
+        spread: isUnanimous ? 100 : 80,
+        origin: { y: 0.55 },
+        colors,
+        scalar: isUnanimous ? 1.35 : 1.15,
+      });
+
+      // Flank studio cannons firing celebratory bursts
+      const frame = () => {
+        confetti({
+          particleCount: isUnanimous ? 6 : 4,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.7 },
+          colors,
+          scalar: 1.1,
+        });
+        confetti({
+          particleCount: isUnanimous ? 6 : 4,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.7 },
+          colors,
+          scalar: 1.1,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    } catch {}
+  };
 
   useEffect(() => {
     // Stage 1: Initial suspense
@@ -56,13 +100,24 @@ export const RevealView: React.FC<RevealViewProps> = ({
       setAnimationStep(3); // Final verdict
       if (result?.contestantWon) {
         sounds.playCashAscend(room.ladderStep);
-        try {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        } catch {}
+        const isLieTrick = Boolean(result.wasLie);
+        const isUnanimousTrick = Boolean(
+          result.wasLie && result.believers.length > 0 && result.doubters.length === 0
+        );
+
+        if (isLieTrick) {
+          triggerCelebrationConfetti(true, isUnanimousTrick);
+        } else {
+          // Standard truth victory
+          try {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#10b981', '#34d399', '#f59e0b', '#ffffff']
+            });
+          } catch {}
+        }
       } else {
         sounds.playEliminated();
       }
@@ -187,6 +242,7 @@ export const RevealView: React.FC<RevealViewProps> = ({
               .map((p, pIdx) => {
                 const isBullshitVote = p.vote === 'bullshit';
                 const isBelieveVote = p.vote === 'believe';
+                const pColor = getAvatarColorClasses(p.avatarColor);
 
                 return (
                   <motion.div
@@ -203,7 +259,9 @@ export const RevealView: React.FC<RevealViewProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{p.avatar}</span>
+                      <span className={`w-8 h-8 rounded-xl border flex items-center justify-center text-lg shadow-sm ${pColor.bgClass} ${pColor.borderClass}`}>
+                        {p.avatar}
+                      </span>
                       <span className="font-bold text-sm text-slate-200 truncate max-w-[110px]">
                         {p.name}
                       </span>
@@ -248,19 +306,73 @@ export const RevealView: React.FC<RevealViewProps> = ({
           </div>
 
           <h3 className="font-display font-black text-2xl sm:text-4xl text-white uppercase tracking-tight">
-            {result.contestantWon ? '¡EL CONCURSANTE GANA LA RONDA!' : '¡EL CONCURSANTE FUE ELIMINADO!'}
+            {result.contestantWon
+              ? result.wasLie && result.believers.length > 0 && result.doubters.length === 0
+                ? '🎭 ¡ENGAÑO TOTAL! ¡EL MENTIROSO ENGAÑÓ A TODOS LOS RETADORES!'
+                : result.wasLie
+                ? '🎭 ¡ENGAÑO EXITOSO! EL MENTIROSO GANA LA RONDA'
+                : '✨ ¡EL CONCURSANTE DIJO LA VERDAD Y AVANZA!'
+              : '¡EL CONCURSANTE FUE ELIMINADO!'}
           </h3>
+
+          {result.wasLie && result.contestantWon && (
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-black uppercase tracking-wider animate-bounce shadow-md">
+                <Sparkles className="w-3.5 h-3.5" />
+                {result.believers.length > 0 && result.doubters.length === 0
+                  ? '¡ENGAÑO UNÁNIME! ¡TODO EL PANEL CAYÓ EN LA TRAMPA!'
+                  : '¡BLUFF TELEVISIVO TRIUNFAL!'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playCashAscend(room.ladderStep);
+                  triggerCelebrationConfetti(
+                    true,
+                    Boolean(result.believers.length > 0 && result.doubters.length === 0)
+                  );
+                }}
+                className="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow"
+              >
+                🎉 ¡Lanzar Más Confeti!
+              </button>
+            </div>
+          )}
 
           <p className="text-sm sm:text-base text-slate-200 max-w-xl mx-auto leading-relaxed">
             {result.reason}
           </p>
 
-          {/* Ladder progression update */}
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <span className="text-xs uppercase font-bold text-slate-400">Pozo Acumulado:</span>
-            <span className="font-display font-black text-2xl text-amber-400 px-4 py-1 rounded-xl bg-slate-950 border border-amber-500/40">
-              {currentPrize}
-            </span>
+          {/* Money and Safe Floor display */}
+          <div className="flex flex-col items-center justify-center gap-2 pt-2">
+            {!result.contestantWon ? (
+              <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 border-2 border-amber-400 text-center space-y-1 shadow-2xl glow-gold max-w-md w-full mx-auto">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-amber-300 block">
+                  Has sido descubierto. Te llevas a casa:
+                </span>
+                <div className="font-display font-black text-4xl sm:text-5xl text-amber-400 flex items-center justify-center gap-2.5">
+                  <Lock className="w-8 h-8 text-amber-400 fill-current" />
+                  <span>{result.takeHomeAmount || room.lockedAmount || '$0'}</span>
+                </div>
+                <span className="text-[11px] font-bold text-amber-300/90 block">
+                  (Monto Asegurado por Candado)
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-xs uppercase font-bold text-slate-400">Pozo Acumulado:</span>
+                  <span className="font-display font-black text-3xl text-amber-400 px-5 py-1.5 rounded-2xl bg-slate-950 border border-amber-500/40 glow-gold shadow-md">
+                    {currentPrize}
+                  </span>
+                </div>
+                {room.lockedAmount && room.lockedAmount !== '$0' && (
+                  <span className="text-xs text-amber-400/90 flex items-center gap-1 font-semibold">
+                    <Lock className="w-3.5 h-3.5" /> Piso asegurado: {room.lockedAmount}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* If new contestant took the hot seat */}

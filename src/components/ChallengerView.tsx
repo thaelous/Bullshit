@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Room, Player, Question, VoteType } from '../types';
+import { Room, Player, Question, VoteType, getAvatarColorClasses, LADDER_PRIZES } from '../types';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
 import {
@@ -11,7 +11,8 @@ import {
   HelpCircle,
   ShieldAlert,
   Flame,
-  Volume2
+  Volume2,
+  Lock
 } from 'lucide-react';
 
 interface ChallengerViewProps {
@@ -55,7 +56,9 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
       {/* Challenger Header Bar */}
       <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
         <div className="flex items-center gap-2.5">
-          <span className="text-2xl">{currentPlayer.avatar}</span>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-2xl border shadow-sm ${getAvatarColorClasses(currentPlayer.avatarColor).bgClass} ${getAvatarColorClasses(currentPlayer.avatarColor).borderClass}`}>
+            {currentPlayer.avatar}
+          </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-sm text-slate-100">{currentPlayer.name}</span>
@@ -83,7 +86,7 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
       {/* Contestant Spotlight Box */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/40 shadow-lg flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-xl">
+          <div className={`w-11 h-11 rounded-xl border flex items-center justify-center text-2xl shadow-md ${getAvatarColorClasses(contestant?.avatarColor).bgClass} ${getAvatarColorClasses(contestant?.avatarColor).borderClass}`}>
             {contestant?.avatar || '👑'}
           </div>
           <div>
@@ -105,6 +108,28 @@ export const ChallengerView: React.FC<ChallengerViewProps> = ({
         ) : (
           <span className="text-xs text-slate-400 italic">Eligiendo respuesta en privado...</span>
         )}
+      </div>
+
+      {/* Contestant Stakes & Candados Safe Floor */}
+      <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs">
+        <div className="flex items-center gap-1.5 text-slate-300">
+          <span className="text-slate-400">En juego:</span>
+          <span className="font-display font-black text-amber-400 text-sm">
+            {LADDER_PRIZES[room.ladderStep]?.amount || '$0'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-slate-300">
+          <Lock className="w-3.5 h-3.5 text-amber-400" />
+          <span className="text-slate-400">Piso seguro:</span>
+          <span className="font-display font-black text-emerald-400 text-xs">
+            {room.lockedAmount || '$0'}
+          </span>
+          <div className="flex items-center gap-0.5 ml-1 text-xs select-none">
+            <span className={(room.locksRemaining ?? 2) >= 1 ? 'opacity-100' : 'opacity-25 grayscale'}>🔒</span>
+            <span className={(room.locksRemaining ?? 2) >= 2 ? 'opacity-100' : 'opacity-25 grayscale'}>🔒</span>
+          </div>
+        </div>
       </div>
 
       {/* Question Card */}

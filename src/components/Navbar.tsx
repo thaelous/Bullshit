@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Volume2, VolumeX, Copy, Check, Flame, Radio, Settings, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Volume2, VolumeX, Copy, Check, Flame, Radio, Settings, LogOut, Maximize, Minimize } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import { isFirebaseConfigured } from '../firebase';
 
@@ -16,7 +16,29 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [muted, setMuted] = useState(!sounds.enabled);
   const [copied, setCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(
+    typeof document !== 'undefined' ? Boolean(document.fullscreenElement) : false
+  );
   const isFb = isFirebaseConfigured();
+
+  // Listen to fullscreen changes (including F11 or Esc keys)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   const toggleSound = () => {
     const nextState = !sounds.enabled;
@@ -24,6 +46,21 @@ export const Navbar: React.FC<NavbarProps> = ({
     setMuted(!nextState);
     if (nextState) {
       sounds.playBelieveChime();
+    }
+  };
+
+  const toggleFullScreen = () => {
+    sounds.playClick();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error al activar pantalla completa: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.error(`Error al salir de pantalla completa: ${err.message}`);
+        });
+      }
     }
   };
 
@@ -100,8 +137,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={toggleSound}
             className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition-colors"
             title={muted ? 'Activar sonido' : 'Silenciar sonido'}
+            aria-label={muted ? 'Activar sonido' : 'Silenciar sonido'}
           >
             {muted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullScreen}
+            className={`p-2 rounded-lg border transition-all ${
+              isFullscreen
+                ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-sm'
+                : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white'
+            }`}
+            title={isFullscreen ? 'Salir de Pantalla Completa (Esc)' : 'Pantalla Completa (F11)'}
+            aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Activar pantalla completa'}
+          >
+            {isFullscreen ? (
+              <Minimize className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Maximize className="w-4 h-4" />
+            )}
           </button>
 
           {/* Leave room */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Room, Player, Question } from '../types';
+import { Room, Player, Question, getAvatarColorClasses, LADDER_PRIZES } from '../types';
+import { Ladder } from './Ladder';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
 import {
@@ -11,7 +12,8 @@ import {
   Clock,
   ArrowRight,
   Vote,
-  Volume2
+  Volume2,
+  Lock
 } from 'lucide-react';
 
 interface ContestantViewProps {
@@ -99,18 +101,31 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
   const hasSelected = selectedOption !== null;
   const isSelectedCorrect = selectedOption === question.correctOption;
 
+  const locksRemaining = room.locksRemaining ?? 2;
+  const currentStep = room.ladderStep;
+  const currentPrize = LADDER_PRIZES[currentStep]?.amount || '$0';
+  const lockedSteps = room.lockedSteps || [];
+  const isCurrentStepLocked = lockedSteps.includes(currentStep);
+  const canActivateLock = isSelectionPhase && locksRemaining > 0 && currentStep > 0 && !isCurrentStepLocked;
+
+  const handleActivateLock = async () => {
+    if (!canActivateLock) return;
+    sounds.playLockActivated();
+    await gameService.activateLock(room.roomCode, currentStep);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col space-y-5 animate-in fade-in duration-300">
       {/* Contestant Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-950 border border-amber-500/50 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-2xl shadow-lg glow-gold">
-            👑
+          <div className={`w-12 h-12 rounded-2xl border-2 flex items-center justify-center font-black text-2xl shadow-lg glow-gold ${getAvatarColorClasses(currentPlayer.avatarColor).bgClass} ${getAvatarColorClasses(currentPlayer.avatarColor).borderClass}`}>
+            {currentPlayer.avatar || '👑'}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-display font-black text-base text-amber-300 uppercase tracking-wider">
-                ESTÁS EN EL HOT SEAT
+                {currentPlayer.name || 'ESTÁS EN EL HOT SEAT'}
               </span>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                 CONCURSANTE
@@ -137,6 +152,94 @@ export const ContestantView: React.FC<ContestantViewProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Horizontal Ladder for Mobile Context */}
+      <Ladder
+        currentStep={room.ladderStep}
+        horizontal
+        lockedSteps={room.lockedSteps || []}
+        locksRemaining={room.locksRemaining ?? 2}
+        lockedAmount={room.lockedAmount || '$0'}
+      />
+
+      {/* Strategic Lock Decision Card (Celular del Mentiroso) */}
+      {isSelectionPhase && (
+        <div
+          className={`p-4 rounded-3xl border-2 transition-all duration-300 shadow-xl ${
+            isCurrentStepLocked
+              ? 'bg-gradient-to-r from-amber-950/70 via-slate-900 to-slate-950 border-amber-400 glow-gold'
+              : 'bg-slate-900/90 border-amber-500/40'
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div
+                className={`p-2.5 rounded-2xl border flex-shrink-0 ${
+                  isCurrentStepLocked
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400/50'
+                    : 'bg-slate-800 text-amber-400 border-amber-500/40'
+                }`}
+              >
+                <Lock className={`w-5 h-5 ${isCurrentStepLocked ? 'text-amber-400 animate-pulse' : 'text-amber-300'}`} />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-display font-black text-sm uppercase tracking-wider text-white">
+                    {isCurrentStepLocked
+                      ? '🔒 CANDADO ACTIVADO EN ESTE NIVEL'
+                      : 'DECISIÓN ESTRATÉGICA DE CANDADO'}
+                  </span>
+                  <div className="flex items-center gap-1 text-xs select-none">
+                    <span className={locksRemaining >= 1 ? 'opacity-100 scale-105' : 'opacity-25 grayscale'}>🔒</span>
+                    <span className={locksRemaining >= 2 ? 'opacity-100 scale-105' : 'opacity-25 grayscale'}>🔒</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                  {currentStep === 0
+                    ? 'Supera al menos 1 pregunta para poder activar un candado ($0 acumulado).'
+                    : isCurrentStepLocked
+                    ? `Piso seguro de ${currentPrize} bloqueado. Si todo el panel te canta Bullshit, te llevas este monto garantizado.`
+                    : `Asegura tu dinero acumulado actual de ${currentPrize}. Te ${
+                        locksRemaining === 1 ? 'queda 1 candado' : `quedan ${locksRemaining} candados`
+                      }.`}
+                </p>
+              </div>
+            </div>
+
+            {/* Lock Action Button */}
+            <div className="flex-shrink-0">
+              {isCurrentStepLocked ? (
+                <div className="px-4 py-2.5 rounded-xl bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-display font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md">
+                  <Lock className="w-4 h-4 text-amber-400" />
+                  <span>NIVEL {currentStep} ASEGURADO ({currentPrize})</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleActivateLock}
+                  disabled={!canActivateLock}
+                  className={`w-full sm:w-auto py-3 px-5 rounded-xl font-display font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                    canActivateLock
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 hover:brightness-110 active:scale-95 shadow-lg glow-gold cursor-pointer ring-2 ring-amber-400/50'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  <Lock className="w-4 h-4 fill-current" />
+                  <span>
+                    {currentStep === 0
+                      ? 'Candado disponible en nivel 1+'
+                      : locksRemaining <= 0
+                      ? 'Sin candados restantes (0/2)'
+                      : '🔒 ACTIVAR CANDADO EN ESTE NIVEL'}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Secret HUD Banner for the Contestant */}
       <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-xs text-slate-300 flex items-start gap-3">

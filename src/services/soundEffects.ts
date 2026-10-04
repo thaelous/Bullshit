@@ -422,6 +422,59 @@ class SoundFX {
     } catch {}
   }
 
+  // Lock engaged / safe level secured sound: Heavy mechanical bolt + golden resonance
+  playLockActivated() {
+    if (!this.enabled) return;
+    try {
+      const dest = this.getDestination();
+      if (!this.ctx || !dest) return;
+      const now = this.ctx.currentTime;
+
+      // 1. Heavy mechanical latch (two quick metallic clicks)
+      [0, 0.08].forEach((offset, idx) => {
+        if (!this.ctx || !dest) return;
+        const clickTime = now + offset;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = idx === 0 ? 'square' : 'sawtooth';
+        osc.frequency.setValueAtTime(idx === 0 ? 820 : 500, clickTime);
+        osc.frequency.exponentialRampToValueAtTime(140, clickTime + 0.05);
+
+        gain.gain.setValueAtTime(0.38, clickTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, clickTime + 0.06);
+
+        osc.connect(gain);
+        gain.connect(dest);
+
+        osc.start(clickTime);
+        osc.stop(clickTime + 0.07);
+      });
+
+      // 2. Golden shimmer harmonic chord (C#5, G#5, C#6, G#6)
+      const chordTime = now + 0.12;
+      const freqs = [554.37, 830.61, 1108.73, 1661.22];
+      freqs.forEach((freq, idx) => {
+        if (!this.ctx || !dest) return;
+        const noteTime = chordTime + idx * 0.035;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, noteTime);
+
+        gain.gain.setValueAtTime(0.25, noteTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.65);
+
+        osc.connect(gain);
+        gain.connect(dest);
+
+        osc.start(noteTime);
+        osc.stop(noteTime + 0.7);
+      });
+    } catch {}
+  }
+
   // --- TRUTH / CORRECT ANSWER FANFARES ---
 
   // Victorious / Correct Answer Sparkle Chime

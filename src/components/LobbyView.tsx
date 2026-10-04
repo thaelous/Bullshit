@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Room, Player, QuestionSet } from '../types';
+import { Room, Player, QuestionSet, PREDEFINED_AVATAR_ICONS, PREDEFINED_AVATAR_COLORS, getAvatarColorClasses } from '../types';
 import { TRIVIA_QUESTIONS } from '../data/questions';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
@@ -19,7 +19,11 @@ import {
   Tv,
   FileSpreadsheet,
   Download,
-  FolderOpen
+  FolderOpen,
+  Palette,
+  Smile,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface LobbyViewProps {
@@ -44,6 +48,19 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   const [starting, setStarting] = useState(false);
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(true);
+
+  const handleSelectAvatarIcon = async (icon: string) => {
+    sounds.playClick();
+    if (!currentPlayer.id || currentPlayer.id === 'guest') return;
+    await gameService.updatePlayer(room.roomCode, currentPlayer.id, { avatar: icon });
+  };
+
+  const handleSelectAvatarColor = async (colorId: string) => {
+    sounds.playClick();
+    if (!currentPlayer.id || currentPlayer.id === 'guest') return;
+    await gameService.updatePlayer(room.roomCode, currentPlayer.id, { avatarColor: colorId });
+  };
 
   const joinUrl = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname}?room=${room.roomCode}`
@@ -301,7 +318,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center text-3xl shadow-lg glow-gold flex-shrink-0">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg border-2 ${getAvatarColorClasses(contestant.avatarColor).bgClass} ${getAvatarColorClasses(contestant.avatarColor).borderClass} glow-gold flex-shrink-0`}>
                   {contestant.avatar || '👑'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -370,6 +387,116 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </div>
           )}
 
+          {/* PLAYER AVATAR & COLOR SELECTION CARD */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-2 border-amber-500/40 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                  <Palette className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-display font-black text-sm uppercase tracking-wider text-white">
+                    Personaliza Tu Avatar y Color
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Elige el ícono y color con el que te verán en pantalla
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Active preview badge */}
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl border shadow-md ${getAvatarColorClasses(currentPlayer.avatarColor).bgClass} ${getAvatarColorClasses(currentPlayer.avatarColor).borderClass}`}>
+                  {currentPlayer.avatar || '😎'}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarPickerOpen(!isAvatarPickerOpen)}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  title={isAvatarPickerOpen ? 'Ocultar selector' : 'Mostrar selector'}
+                >
+                  {isAvatarPickerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {isAvatarPickerOpen && (
+              <div className="space-y-3 pt-1 border-t border-slate-800/80 animate-in fade-in duration-200">
+                {/* 1. Predefined Icon Selector */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                      <Smile className="w-3.5 h-3.5 text-amber-400" />
+                      Ícono de Avatar ({PREDEFINED_AVATAR_ICONS.length}):
+                    </span>
+                    <span className="text-[10px] text-amber-400/90 font-medium">Toca para cambiar</span>
+                  </div>
+
+                  <div className="grid grid-cols-8 sm:grid-cols-12 gap-1.5 bg-slate-950/70 p-2 rounded-2xl border border-slate-800 max-h-36 overflow-y-auto">
+                    {PREDEFINED_AVATAR_ICONS.map((icon) => {
+                      const isSelected = (currentPlayer.avatar || '😎') === icon;
+                      return (
+                        <button
+                          key={icon}
+                          type="button"
+                          onClick={() => handleSelectAvatarIcon(icon)}
+                          className={`h-9 rounded-xl flex items-center justify-center text-xl transition-all ${
+                            isSelected
+                              ? 'bg-amber-500/30 border-2 border-amber-400 scale-110 shadow-lg glow-gold ring-2 ring-amber-400/50'
+                              : 'bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 hover:scale-105 active:scale-95'
+                          }`}
+                          title={`Seleccionar ${icon}`}
+                        >
+                          {icon}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Predefined Color Palette Selector */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                      <Palette className="w-3.5 h-3.5 text-amber-400" />
+                      Color de la Tarjeta ({PREDEFINED_AVATAR_COLORS.length}):
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {getAvatarColorClasses(currentPlayer.avatarColor).name}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                    {PREDEFINED_AVATAR_COLORS.map((col) => {
+                      const isSelected = (currentPlayer.avatarColor || 'amber') === col.id;
+                      return (
+                        <button
+                          key={col.id}
+                          type="button"
+                          onClick={() => handleSelectAvatarColor(col.id)}
+                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                            isSelected
+                              ? 'bg-slate-900 border-white ring-2 ring-white/60 shadow-lg scale-105'
+                              : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 active:scale-95'
+                          }`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full shadow-inner border border-white/20"
+                            style={{ backgroundColor: col.hex }}
+                          />
+                          <span className="text-[9px] font-bold text-slate-300 truncate max-w-full">
+                            {col.name.split(' ')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Connected Participants List */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-3">
@@ -401,6 +528,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
               ) : (
                 players.map((p) => {
                   const isCurrentLiar = p.id === room.activeContestantId;
+                  const pColor = getAvatarColorClasses(p.avatarColor);
                   return (
                     <div
                       key={p.id}
@@ -411,7 +539,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{p.avatar}</span>
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-2xl border ${pColor.bgClass} ${pColor.borderClass} shadow-md flex-shrink-0`}>
+                          {p.avatar}
+                        </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm text-slate-200">

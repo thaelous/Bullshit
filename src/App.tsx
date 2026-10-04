@@ -172,6 +172,7 @@ export default function App() {
     id: playerId || 'guest',
     name: 'Invitado',
     avatar: '😎',
+    avatarColor: 'amber',
     role: 'challenger',
     vote: null,
     voteTimestamp: null,
