@@ -40,5 +40,15 @@ service cloud.firestore {
         request.resource.data.name is string && request.resource.data.name.size() <= 100;
       allow delete: if isValidId(questionSetId);
     }
+
+    // Docentes y Usuarios de la aplicación (Autenticación Docente)
+    match /usuarios/{usuarioId} {
+      allow read, write: if true;
+    }
+
+    // Códigos de suscripción y licencias docentes
+    match /suscripciones/{suscripcionId} {
+      allow read, write: if true;
+    }
   }
 }

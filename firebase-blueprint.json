@@ -109,6 +109,37 @@
         }
       },
       "required": ["name", "questionCount"]
+    },
+    "Usuario": {
+      "title": "Usuario",
+      "description": "Teacher account registered with a valid license",
+      "type": "object",
+      "properties": {
+        "nombre": { "type": "string", "description": "Teacher full name" },
+        "email": { "type": "string", "description": "Teacher email address" },
+        "password": { "type": "string", "description": "Teacher password" },
+        "codigoLicencia": { "type": "string", "description": "Redeemed license code" },
+        "deviceIdAutorizado": { "type": "string", "description": "Authorized hardware device ID for single-seat control" },
+        "rol": { "type": "string", "description": "User role: docente" },
+        "fechaRegistro": { "type": "string", "description": "Registration date ISO" },
+        "ultimoAcceso": { "type": "string", "description": "Last access date ISO" },
+        "activo": { "type": "boolean", "description": "Account status" }
+      },
+      "required": ["email", "password", "codigoLicencia"]
+    },
+    "Suscripcion": {
+      "title": "Suscripcion",
+      "description": "Teacher license code registry",
+      "type": "object",
+      "properties": {
+        "codigo": { "type": "string", "description": "Unique license code key" },
+        "usado": { "type": "boolean", "description": "Whether the code has been redeemed" },
+        "estado": { "type": "string", "description": "Status: disponible or usado" },
+        "usadoPor": { "type": "string", "description": "Email of the teacher who used it" },
+        "fechaUso": { "type": "string", "description": "Redemption timestamp ISO" },
+        "plan": { "type": "string", "description": "License type: Docente Pro, Anual, etc." }
+      },
+      "required": ["codigo", "usado"]
     }
   },
   "firestore": {
@@ -123,6 +154,14 @@
     "/questionSets/{questionSetId}": {
       "schema": "QuestionSet",
       "description": "Custom question sets uploaded by hosts"
+    },
+    "/usuarios/{usuarioId}": {
+      "schema": "Usuario",
+      "description": "Teacher account registry"
+    },
+    "/suscripciones/{suscripcionId}": {
+      "schema": "Suscripcion",
+      "description": "License codes inventory"
     }
   }
 }

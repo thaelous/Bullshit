@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Copy, Check, LogOut, Maximize, Minimize } from 'lucide-react';
+import { Volume2, VolumeX, Copy, Check, LogOut, Maximize, Minimize, Power, UserCheck } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
+import { UsuarioDocente } from '../services/authService';
 
 interface NavbarProps {
   roomCode?: string;
   onOpenFirebaseModal?: () => void;
   onLeaveRoom?: () => void;
+  currentUser?: UsuarioDocente | null;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   roomCode,
-  onLeaveRoom
+  onLeaveRoom,
+  currentUser,
+  onLogout
 }) => {
   const [muted, setMuted] = useState(!sounds.enabled);
   const [copied, setCopied] = useState(false);
@@ -145,6 +150,32 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <LogOut className="w-4 h-4" />
             </button>
+          )}
+
+          {/* Docente Info & Cerrar Sesión */}
+          {onLogout && (
+            <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-800">
+              {currentUser && (
+                <div className="hidden md:flex flex-col text-right leading-tight pr-1">
+                  <span className="text-xs font-bold text-amber-300 truncate max-w-[130px] flex items-center justify-end gap-1">
+                    <UserCheck className="w-3 h-3 text-emerald-400" />
+                    {currentUser.nombre}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Lic. {currentUser.codigoLicencia ? currentUser.codigoLicencia.substring(0, 12) : 'Activa'}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-950/50 hover:bg-red-900/70 border border-red-500/50 text-red-300 hover:text-white transition-all text-xs font-bold cursor-pointer shadow-sm active:scale-95"
+                title="Cerrar sesión de docente"
+                aria-label="Cerrar sesión"
+              >
+                <Power className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+              </button>
+            </div>
           )}
         </div>
       </div>

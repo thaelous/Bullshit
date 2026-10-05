@@ -14,9 +14,15 @@ import { RevealView } from './components/RevealView';
 import { GameOverView } from './components/GameOverView';
 import { Ladder } from './components/Ladder';
 import { FirebaseModal } from './components/FirebaseModal';
+import { AuthModal } from './components/AuthModal';
+import { authService, UsuarioDocente } from './services/authService';
 import { Tv, Smartphone } from 'lucide-react';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState<UsuarioDocente | null>(() => authService.getCurrentUser());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => authService.isAuthenticated());
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(() => !authService.isAuthenticated());
+
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
@@ -25,6 +31,20 @@ export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [initialRoomFromUrl, setInitialRoomFromUrl] = useState<string>('');
+
+  const handleAuthSuccess = (user: UsuarioDocente) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+  };
+
+  const handleLogout = async () => {
+    sounds.playClick();
+    await authService.logout();
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setShowAuthModal(true);
+  };
 
   // Extract ?room=CODE from URL if present
   useEffect(() => {
@@ -197,6 +217,8 @@ export default function App() {
         roomCode={roomCode || undefined}
         onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
         onLeaveRoom={roomCode ? handleLeaveRoom : undefined}
+        currentUser={currentUser}
+        onLogout={isAuthenticated ? handleLogout : undefined}
       />
 
       {/* Main Content Area with fluid animated screen transitions */}
@@ -341,6 +363,12 @@ export default function App() {
           // Re-render
           setRoomCode((prev) => (prev ? `${prev}` : null));
         }}
+      />
+
+      {/* Teacher Authentication & Licensing Modal (Bloquea la app si no hay auth_token) */}
+      <AuthModal
+        isOpen={showAuthModal || !isAuthenticated}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );
