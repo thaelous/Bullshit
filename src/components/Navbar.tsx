@@ -9,13 +9,15 @@ interface NavbarProps {
   onLeaveRoom?: () => void;
   currentUser?: UsuarioDocente | null;
   onLogout?: () => void;
+  isParticipant?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   roomCode,
   onLeaveRoom,
   currentUser,
-  onLogout
+  onLogout,
+  isParticipant = false
 }) => {
   const [muted, setMuted] = useState(!sounds.enabled);
   const [copied, setCopied] = useState(false);
@@ -85,11 +87,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
           <div>
-            <h1 className="font-display font-black text-lg sm:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500 drop-shadow">
-              ¡MENTIROSO!
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display font-black text-lg sm:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500 drop-shadow">
+                ¡MENTIROSO!
+              </h1>
+              {isParticipant && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase font-black tracking-wider">
+                  Retador
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-amber-400/80 font-bold uppercase tracking-widest hidden sm:block">
-              El Juego de la Mentira
+              {isParticipant ? 'Panel de Participante' : 'El Juego de la Mentira'}
             </p>
           </div>
         </div>

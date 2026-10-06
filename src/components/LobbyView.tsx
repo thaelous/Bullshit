@@ -63,7 +63,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   };
 
   const joinUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}?room=${room.roomCode}`
+    ? `${window.location.origin}${window.location.pathname}?room=${room.roomCode}&role=challenger`
     : '';
 
   useEffect(() => {

@@ -19,9 +19,30 @@ import { authService, UsuarioDocente } from './services/authService';
 import { Tv, Smartphone } from 'lucide-react';
 
 export default function App() {
+  // 1. Detección Inmediata de Parámetros de URL al iniciar la aplicación
+  const [urlParams] = useState(() => {
+    if (typeof window === 'undefined') return { roomParam: null, roleParam: null };
+    const searchParams = new URLSearchParams(window.location.search);
+    return {
+      roomParam: searchParams.get('room')?.toUpperCase().trim() || null,
+      roleParam: searchParams.get('role')?.toLowerCase().trim() || null
+    };
+  });
+
+  const { roomParam, roleParam } = urlParams;
+  const isParticipantRoute = Boolean(
+    roomParam ||
+    roleParam === 'challenger' ||
+    roleParam === 'player'
+  );
+
   const [currentUser, setCurrentUser] = useState<UsuarioDocente | null>(() => authService.getCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => authService.isAuthenticated());
-  const [showAuthModal, setShowAuthModal] = useState<boolean>(() => !authService.isAuthenticated());
+  // Si la URL detecta que es un participante/retador, no se bloquea con el modal docente
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(() => {
+    if (isParticipantRoute) return false;
+    return !authService.isAuthenticated();
+  });
 
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
@@ -30,7 +51,7 @@ export default function App() {
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
-  const [initialRoomFromUrl, setInitialRoomFromUrl] = useState<string>('');
+  const [initialRoomFromUrl, setInitialRoomFromUrl] = useState<string>(() => roomParam || '');
 
   const handleAuthSuccess = (user: UsuarioDocente) => {
     setCurrentUser(user);
@@ -215,10 +236,11 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         roomCode={roomCode || undefined}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+        onOpenFirebaseModal={!isParticipantRoute ? () => setIsFirebaseModalOpen(true) : undefined}
         onLeaveRoom={roomCode ? handleLeaveRoom : undefined}
-        currentUser={currentUser}
-        onLogout={isAuthenticated ? handleLogout : undefined}
+        currentUser={isParticipantRoute ? null : currentUser}
+        onLogout={!isParticipantRoute && isAuthenticated ? handleLogout : undefined}
+        isParticipant={isParticipantRoute}
       />
 
       {/* Main Content Area with fluid animated screen transitions */}
@@ -236,6 +258,7 @@ export default function App() {
               <HomeView
                 onGameJoined={handleGameJoined}
                 initialRoomCode={initialRoomFromUrl}
+                isParticipantOnly={isParticipantRoute}
               />
             </motion.div>
           ) : room.status === 'lobby' ? (
@@ -306,29 +329,31 @@ export default function App() {
                   <Ladder currentStep={room.ladderStep} horizontal />
                 </div>
 
-                <div className="ml-auto">
-                  <button
-                    onClick={() => setIsTvMode(!isTvMode)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-amber-400 hover:border-amber-500/40 transition-all shadow-md"
-                    title="Cambiar entre modo TV Studio y modo Jugador individual"
-                  >
-                    {isTvMode ? (
-                      <>
-                        <Smartphone className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Modo Jugador</span>
-                      </>
-                    ) : (
-                      <>
-                        <Tv className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Modo TV Studio</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                {!isParticipantRoute && (
+                  <div className="ml-auto">
+                    <button
+                      onClick={() => setIsTvMode(!isTvMode)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-amber-400 hover:border-amber-500/40 transition-all shadow-md"
+                      title="Cambiar entre modo TV Studio y modo Jugador individual"
+                    >
+                      {isTvMode ? (
+                        <>
+                          <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Modo Jugador</span>
+                        </>
+                      ) : (
+                        <>
+                          <Tv className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Modo TV Studio</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Dynamic View based on Mode and Role */}
-              {isTvMode ? (
+              {isTvMode && !isParticipantRoute ? (
                 <TvHostView
                   room={room}
                   question={currentQuestion}
@@ -365,11 +390,13 @@ export default function App() {
         }}
       />
 
-      {/* Teacher Authentication & Licensing Modal (Bloquea la app si no hay auth_token) */}
-      <AuthModal
-        isOpen={showAuthModal || !isAuthenticated}
-        onSuccess={handleAuthSuccess}
-      />
+      {/* Teacher Authentication & Licensing Modal (Exclusivo para profesor/anfitrión; los participantes no son bloqueados) */}
+      {!isParticipantRoute && (
+        <AuthModal
+          isOpen={showAuthModal || !isAuthenticated}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   );
 }

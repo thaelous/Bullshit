@@ -20,19 +20,21 @@ import {
 interface HomeViewProps {
   onGameJoined: (roomCode: string, playerId: string, isHost: boolean) => void;
   initialRoomCode?: string;
+  isParticipantOnly?: boolean;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onGameJoined,
-  initialRoomCode = ''
+  initialRoomCode = '',
+  isParticipantOnly = false
 }) => {
   const [mode, setMode] = useState<'welcome' | 'create' | 'join' | 'qr_join'>(
-    initialRoomCode ? 'qr_join' : 'welcome'
+    initialRoomCode || isParticipantOnly ? 'qr_join' : 'welcome'
   );
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [selectedAvatar, setSelectedAvatar] = useState<string>(PREDEFINED_AVATAR_ICONS[0]);
-  const [selectedAvatarColor, setSelectedAvatarColor] = useState<string>('amber');
+  const [selectedAvatarColor, setSelectedAvatarColor] = useState<string>('cyan');
   const [isTvDisplay, setIsTvDisplay] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -203,6 +205,89 @@ export const HomeView: React.FC<HomeViewProps> = ({
       setLoading(false);
     }
   };
+
+  if (isParticipantOnly) {
+    const targetRoomCode = (roomCode || initialRoomCode).toUpperCase().trim();
+    return (
+      <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center p-3 sm:p-6 space-y-4 animate-in fade-in duration-300">
+        <div className="w-full bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                SALA: {targetRoomCode || 'ACTIVA'}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+              Panel Retador
+            </span>
+          </div>
+
+          <div className="text-center space-y-1">
+            <h2 className="font-display font-black text-2xl text-white">
+              ¡Únete como Retador!
+            </h2>
+            <p className="text-xs text-slate-300">
+              Votarás desde este dispositivo para descubrir si el concursante miente o dice la verdad.
+            </p>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-300 text-xs font-semibold">
+              {errorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleJoinRoom} className="space-y-4">
+            {!targetRoomCode && (
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Código de Sala (4 caracteres) <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  placeholder="Ej. BULL"
+                  maxLength={6}
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 text-lg text-amber-400 font-mono font-black tracking-widest text-center uppercase outline-none"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Tu Nombre o Apodo <span className="text-amber-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Ej. Lucas, Valentina, El Escéptico..."
+                maxLength={30}
+                autoFocus
+                required
+                className="w-full bg-slate-950 border border-emerald-500/60 focus:border-emerald-400 rounded-xl px-4 py-3.5 text-base text-white font-semibold outline-none shadow-inner"
+              />
+            </div>
+
+            {/* Avatar & Color picker */}
+            {renderAvatarAndColorPicker('emerald')}
+
+            <button
+              type="submit"
+              disabled={loading || !playerName.trim()}
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 text-slate-950 font-display font-black text-lg uppercase tracking-wider hover:brightness-110 active:scale-[0.99] transition-all glow-green shadow-2xl flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              <Users className="w-5 h-5" />
+              {loading ? 'Conectando al Panel...' : '¡ENTRAR AL PANEL DE RETADORES! →'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center p-4 sm:p-6 space-y-8 animate-in fade-in duration-500">
