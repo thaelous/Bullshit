@@ -15,7 +15,9 @@ import { GameOverView } from './components/GameOverView';
 import { Ladder } from './components/Ladder';
 import { FirebaseModal } from './components/FirebaseModal';
 import { AuthModal } from './components/AuthModal';
+import { BrandingModal } from './components/BrandingModal';
 import { authService, UsuarioDocente } from './services/authService';
+import { themeService, BrandingTheme } from './services/themeService';
 import { Tv, Smartphone } from 'lucide-react';
 
 export default function App() {
@@ -43,6 +45,17 @@ export default function App() {
     if (isParticipantRoute) return false;
     return !authService.isAuthenticated();
   });
+
+  // Branding & Visual Theme state
+  const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false);
+  const [brandingTheme, setBrandingTheme] = useState<BrandingTheme>(() => themeService.getActiveTheme());
+
+  useEffect(() => {
+    const unsub = themeService.subscribe((theme) => {
+      setBrandingTheme(theme);
+    });
+    return unsub;
+  }, []);
 
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
@@ -237,10 +250,12 @@ export default function App() {
       <Navbar
         roomCode={roomCode || undefined}
         onOpenFirebaseModal={!isParticipantRoute ? () => setIsFirebaseModalOpen(true) : undefined}
+        onOpenBrandingModal={!isParticipantRoute ? () => setIsBrandingModalOpen(true) : undefined}
         onLeaveRoom={roomCode ? handleLeaveRoom : undefined}
         currentUser={isParticipantRoute ? null : currentUser}
         onLogout={!isParticipantRoute && isAuthenticated ? handleLogout : undefined}
         isParticipant={isParticipantRoute}
+        brandingTheme={brandingTheme}
       />
 
       {/* Main Content Area with fluid animated screen transitions */}
@@ -277,6 +292,8 @@ export default function App() {
                 isHost={isHost}
                 isTvDisplayMode={isTvMode}
                 onSwitchToTvDisplay={() => setIsTvMode(true)}
+                onOpenBrandingModal={() => setIsBrandingModalOpen(true)}
+                brandingTheme={brandingTheme}
               />
             </motion.div>
           ) : room.status === 'game_over' ? (
@@ -359,6 +376,8 @@ export default function App() {
                   question={currentQuestion}
                   players={players}
                   onToggleTvMode={() => setIsTvMode(false)}
+                  brandingTheme={brandingTheme}
+                  onOpenBrandingModal={() => setIsBrandingModalOpen(true)}
                 />
               ) : isContestant ? (
                 <ContestantView
@@ -388,6 +407,12 @@ export default function App() {
           // Re-render
           setRoomCode((prev) => (prev ? `${prev}` : null));
         }}
+      />
+
+      {/* Instructor Branding, Theme & Logo Analysis Modal */}
+      <BrandingModal
+        isOpen={isBrandingModalOpen}
+        onClose={() => setIsBrandingModalOpen(false)}
       />
 
       {/* Teacher Authentication & Licensing Modal (Exclusivo para profesor/anfitrión; los participantes no son bloqueados) */}

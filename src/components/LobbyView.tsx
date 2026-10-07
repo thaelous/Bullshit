@@ -6,6 +6,7 @@ import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
 import { downloadExcelTemplate } from '../services/excelService';
 import { QuestionBankModal } from './QuestionBankModal';
+import { BrandingTheme } from '../services/themeService';
 import {
   Users,
   Play,
@@ -33,6 +34,8 @@ interface LobbyViewProps {
   isHost: boolean;
   onSwitchToTvDisplay?: () => void;
   isTvDisplayMode?: boolean;
+  onOpenBrandingModal?: () => void;
+  brandingTheme?: BrandingTheme;
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({
@@ -41,7 +44,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   currentPlayer,
   isHost,
   onSwitchToTvDisplay,
-  isTvDisplayMode = false
+  isTvDisplayMode = false,
+  onOpenBrandingModal,
+  brandingTheme
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -213,19 +218,33 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
               sounds.playClick();
               setIsBankModalOpen(true);
             }}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             title="Abrir Banco de Preguntas y subir Excel"
           >
             <FolderOpen className="w-4 h-4 text-amber-400" />
             <span>Subir Plantilla Excel (.xlsx)</span>
           </button>
 
+          {onOpenBrandingModal && (
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onOpenBrandingModal();
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              title="Personalizar Colores, Temas y Logotipo de la Institución"
+            >
+              <Palette className="w-4 h-4 text-purple-400" />
+              <span>Branding & Temas Visuales</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               sounds.playClick();
               downloadExcelTemplate();
             }}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Descargar Plantilla Base (.xlsx)"
           >
             <Download className="w-4 h-4" />

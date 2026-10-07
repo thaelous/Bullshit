@@ -3,6 +3,7 @@ import { Room, Player, Question, getAvatarColorClasses } from '../types';
 import { Ladder } from './Ladder';
 import { gameService } from '../services/gameSync';
 import { sounds } from '../services/soundEffects';
+import { BrandingTheme } from '../services/themeService';
 import {
   Crown,
   Users,
@@ -13,7 +14,8 @@ import {
   Tv,
   ArrowRight,
   Maximize,
-  Minimize
+  Minimize,
+  Palette
 } from 'lucide-react';
 
 interface TvHostViewProps {
@@ -21,13 +23,17 @@ interface TvHostViewProps {
   question: Question;
   players: Player[];
   onToggleTvMode: () => void;
+  brandingTheme?: BrandingTheme;
+  onOpenBrandingModal?: () => void;
 }
 
 export const TvHostView: React.FC<TvHostViewProps> = ({
   room,
   question,
   players,
-  onToggleTvMode
+  onToggleTvMode,
+  brandingTheme,
+  onOpenBrandingModal
 }) => {
   const contestant = players.find((p) => p.id === room.activeContestantId);
   const challengers = players.filter((p) => p.id !== room.activeContestantId);
@@ -110,14 +116,38 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
       {/* Left/Center: Main TV Stage Area */}
       <div className="flex-1 flex flex-col space-y-6">
         {/* Top TV Host Bar */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 backdrop-blur-md">
+        <div
+          className="flex flex-wrap items-center justify-between p-4 rounded-2xl border backdrop-blur-md gap-3"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--border-card)'
+          }}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black">
-              <Tv className="w-5 h-5" />
-            </div>
+            {brandingTheme?.logoUrl && brandingTheme.showLogoInTv !== false ? (
+              <div className="h-11 px-2.5 rounded-xl bg-slate-950/80 border border-white/20 flex items-center justify-center shadow-lg">
+                <img
+                  src={brandingTheme.logoUrl}
+                  alt={brandingTheme.institutionName || 'Logo'}
+                  className="max-h-9 max-w-[120px] object-contain"
+                />
+              </div>
+            ) : (
+              <div
+                className="p-2.5 rounded-xl text-slate-950 font-black shadow-lg"
+                style={{
+                  backgroundColor: 'var(--color-primary)'
+                }}
+              >
+                <Tv className="w-5 h-5 stroke-[2.5]" />
+              </div>
+            )}
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                PANTALLA PRINCIPAL / MODO TV STUDIO
+              <span
+                className="text-[10px] font-black uppercase tracking-widest block"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                {brandingTheme?.institutionName ? `ESCENARIO OFICIAL: ${brandingTheme.institutionName}` : 'PANTALLA PRINCIPAL / MODO TV STUDIO'}
               </span>
               <h3 className="font-display font-black text-xl text-white">
                 ¡MENTIROSO!: EL JUEGO DE LA MENTIRA
@@ -125,18 +155,38 @@ export const TvHostView: React.FC<TvHostViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-amber-500/40">
-              <Clock className="w-4 h-4 text-amber-400" />
-              <span className="font-timer text-2xl text-amber-400 font-bold leading-none">
+          <div className="flex items-center gap-2.5">
+            {onOpenBrandingModal && (
+              <button
+                onClick={onOpenBrandingModal}
+                className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Personalizar Colores y Logo"
+              >
+                <Palette className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Branding</span>
+              </button>
+            )}
+
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                borderColor: 'var(--border-card)'
+              }}
+            >
+              <Clock className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+              <span
+                className="font-timer text-2xl font-bold leading-none"
+                style={{ color: 'var(--color-primary)' }}
+              >
                 {timer}s
               </span>
             </div>
             <button
               onClick={onToggleTvMode}
-              className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
             >
-              Vista de Jugador
+              Vista Jugador
             </button>
 
             <button
